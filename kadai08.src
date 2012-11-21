@@ -1,0 +1,25 @@
+        .CPU        300HA
+        .SECTION    SWLED,CODE,LOCATE=H'00000000
+P1DDR:  .EQU        H'FFFFC0
+P1DR:   .EQU        H'FFFFC2
+P5DDR:  .EQU        H'FFFFC8
+P5DR    .EQU        H'FFFFCA
+P5PCR   .EQU        H'FFFFDB
+
+        .SECTION    ROM,CODE,LOCATE=H'000100
+        mov.L       #H'FFFF00,ER7
+        mov.B       #H'FF,R0L
+        mov.B       R0L,@P1DDR
+        mov.B       #H'00,R0L
+        mov.B       R0L,@P5DDR
+        mov.B       #H'FF,R0L
+        mov.B       R0L,@P5PCR
+
+        mov.B       #H'FF,R1L
+LOOP:   mov.B       @P5DR,R0L
+        xor.B       #H'0F,R0L   ;;押したボタンに対応したLEDが光る。LED6～LED9まではつけっぱなしに
+        mov.B       R0L,@P1DR
+        cmp.B       R1L,R0L     ;;R0L-0xFF
+        bne         LOOP        ;;全部点いていなければループ
+FINISH  jmp         @FINISH     ;;全部点いたら点けっぱなしになる
+        .END

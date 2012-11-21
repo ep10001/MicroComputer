@@ -1,0 +1,90 @@
+        .CPU        300HA                       ;CPUの種類を指示
+        
+        .SECTION    SET1,CODE,LOCATE=H'000000   ;セクションを宣言 セクション名=SET1,種類=CODE、先頭アドレス=0番地
+P1DR:   .EQU        H'FFFFC2                    ;ポート1のDRアドレス設定
+P1DDR:  .EQU        H'FFFFC0                    ;ポート1のDDRアドレス設定
+
+        .SECTION    SET2,CODE,LOCATE=H'000100   ;セクションを宣言　セクション名=SET2,属性=CODE,先頭アドレス=100番地
+        mov.L       #H'FFFF00,ER7               ;スタックポインタ設定
+        mov.B       #H'FF,R0L                   ;出力用設定データ
+        mov.B       R0L,@P1DDR                  ;ポート1を出力に設定
+        
+Kadai7: jsr         @lightA
+        jsr         @lightO
+        jsr         @lightK
+        jsr         @lightI
+LOOP:   jmp         @LOOP                       ;終わり。
+
+
+lightA: jsr         @short                      ;短音(1拍)
+        jsr         @wait2                      ;音と音の間(2拍)
+        jsr         @long                       ;長音(3拍)
+        jsr         @wait3                      ;字と字の間(3拍)
+        rts
+        
+lightO: jsr         @long                       ;長音(3拍)
+        jsr         @wait2                      ;音と音の間(2拍)
+        jsr         @long                       ;長音(3拍)
+        jsr         @wait2                      ;音と音の間(2拍)
+        jsr         @long                       ;長音(3拍)
+        jsr         @wait3                      ;字と字の間(3拍)
+        rts
+
+lightK: jsr         @long                       ;長音(1拍)
+        jsr         @wait2                      ;音と音の間(2拍)
+        jsr         @short                      ;短音(3拍)
+        jsr         @wait2                      ;音と音の間(2拍)
+        jsr         @long                       ;長音(3拍)
+        jsr         @wait3                      ;字と字の間(3拍)
+        rts
+
+lightI: jsr         @short                      ;短音(1拍)
+        jsr         @wait2                      ;音と音の間(2拍)
+        jsr         @short                      ;短音(3拍)
+        jsr         @wait3                      ;字と字の間(3拍)
+        rts
+
+short:  mov.B       #B'00000011,R0L             ;LED点灯データ
+        mov.B       R0L,@P1DR                   ;ポート1へ点灯データ出力
+        jsr         @TIM1
+        rts
+
+long:   mov.B       #B'11111100,R0L             ;LED点灯データ
+        mov.B       R0L,@P1DR                   ;ポート1へ点灯データ出力
+        jsr         @TIM3
+        rts
+
+wait2:  mov.B       #B'00000000,R0L             ;LED点灯データ
+        mov.B       R0L,@P1DR                   ;ポート1へ点灯データ出力
+        jsr         @TIM2
+        rts
+        
+wait3:  mov.B       #B'00000000,R0L             ;LED点灯データ
+        mov.B       R0L,@P1DR                   ;ポート1へ点灯データ出力
+        jsr         @TIM3
+        rts
+
+;;タイマーサブルーチン1
+;;1拍分の間を置く。ER5に値をセットしてベースタイマーサブルーチンを呼ぶ
+TIM1:   mov.L       #H'00200000,ER5
+        jsr         @TIM
+        rts
+        
+;;タイマーサブルーチン2
+;;2拍分の間を置く。ER5に値をセットしてベースタイマーサブルーチンを呼ぶ
+TIM2:   mov.L       #H'00400000,ER5
+        jsr         @TIM
+        rts
+
+;;タイマーサブルーチン2
+;;3拍分の間を置く。ER5に値をセットしてベースタイマーサブルーチンを呼ぶ
+TIM3:   mov.L       #H'00600000,ER5
+        jsr         @TIM
+        rts
+
+;;ベースタイマーサブルーチン ER5の値をデクリメントしていき、0になったら戻る
+TIM:    dec.L       #H'1,ER5                    ;ER5-1
+        bne         TIM                         ;≠0
+        rts
+        
+        .END

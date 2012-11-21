@@ -1,0 +1,38 @@
+        .CPU        300HA                       ;CPUの種類を指示
+        
+        .SECTION    SET1,CODE,LOCATE=H'000000   ;セクションを宣言 セクション名=SET1,種類=CODE、先頭アドレス=0番地
+P1DR:   .EQU        H'FFFFC2                    ;ポート1のDRアドレス設定
+P1DDR:  .EQU        H'FFFFC0                    ;ポート1のDDRアドレス設定
+
+        .SECTION    SET2,CODE,LOCATE=H'000100   ;セクションを宣言　セクション名=SET2,属性=CODE,先頭アドレス=100番地
+        mov.L       #H'FFFF00,ER7               ;スタックポインタ設定
+        mov.B       #H'FF,R0L                   ;出力用設定データ
+        mov.B       R0L,@P1DDR                  ;ポート1を出力に設定
+        
+Kadai3: mov.B       @DATA1, R0L
+        mov.B       @DATA2, R1L
+        cmp.B       R1L,R0L                     ;比較(R0L-R1L)
+        bge         LED                         ;R0L≧R1LならLEDへ
+        
+        ;単純な考え方では以下のように@DATA1と@DATA2を入れ替えればよいが
+        ;実際には機器の制限のため@DATA1と@DATA2は上書きされない
+        ;mov.B       R0L,@DATA2
+        ;mov.B       R1L,@DATA1
+        ;mov.B       R0L,@DATA1              ;入れ替えたメモリの中身をもってくる
+        
+        ;レジスタ内でスワップする方法をとる
+        mov.B       R0L,R2L
+        mov.B       R1L,R0L
+        mov.B       R2L,R1L
+
+LED:    mov.B       R0L,@P1DR
+LOOP:   jmp         @LOOP
+        
+        .SECTION    DT,DATA,LOCATE=H'001000 ;セクションを宣言 セクション名=DT,属性=CODE,先頭アドレス=1000番地
+DATA1:  .DATA.B     H'0F                    ;DATA1はH'001000番地
+DATA2:  .DATA.B     H'F0                    ;DATA2はH'001001番地
+
+        .END
+
+;;DATA1がH'0F, DATA2がH'10のとき00010000が点灯
+;;DATA1がH'0F, DATA2がH'F0のとき00001111が点灯 ->符号付き比較が実現できていることが分かる
